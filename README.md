@@ -50,27 +50,27 @@ Use space to toggle selection, enter to confirm, q to quit.
 ### Actually delete
 
 ```
-./media-purger --delete
+./media-purger --delete-watched-but-not-favourited-yes-i-am-really-sure
 ```
 
 The long flag name is intentional. You have to type it out.
 
 ## Options
-
-`--watched-by` - Users who must all have watched an item for it to be considered. Default is all users.
-
-`--protected-by` - Users where any having favorited an item protects it from deletion. Default is all users.
-
+`--jellyfin-url` / `JELLYFIN_URL` - Jellyfin server URL.
+`--jellyfin-api-key` / `JELLYFIN_API_KEY` - Jellyfin API key.
+`--watched-by`, `-w` - Users who must all have watched an item for it to be considered. Default is all users.
+`--protected-by`, `-p` - Users where any having favorited an item protects it from deletion. Default is all users.
 `--min-days-watched-ago N` - Only include items not watched in the last N days.
-
 `--ignore-favorites` - Delete even if favorited. Cannot be used with `--protected-by`.
+`--interactive`, `-i` - Interactive TUI mode.
+`--delete-watched-...` - Actually perform deletion. Default is dry-run.
 
 ## Examples
 
-Delete items watched by alice and bob but not favorited by anyone:
+Delete items watched by alice and bob, regardless of favorite status:
 
 ```
-./media-purger --watched-by alice bob --protected-by ""
+./media-purger --watched-by alice bob --ignore-favorites
 ```
 
 Delete items that alice has watched and bob has not favorited:
@@ -82,7 +82,7 @@ Delete items that alice has watched and bob has not favorited:
 Delete items all users have watched and no user has favorited, if watched more than 30 days ago:
 
 ```
-./media-purger --min-days-watched-ago 30 --delete
+./media-purger --min-days-watched-ago 30 --delete-watched-but-not-favourited-yes-i-am-really-sure
 ```
 
 Delete everything regardless of favorite status:
