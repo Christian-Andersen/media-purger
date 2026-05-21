@@ -1,3 +1,4 @@
+# check then run
 default: check run
 alias r := run
 run:
