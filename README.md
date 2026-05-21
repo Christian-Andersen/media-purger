@@ -4,6 +4,18 @@ Delete watched-but-not-favorited media from Jellyfin to free up space.
 
 The tool finds media that every specified user has watched but no specified user has marked as favorite, then gives you a way to delete it. It handles episodes, seasons, and series grouping so you can see and delete by season or series.
 
+## Install
+
+Download the pre-built binary from the [releases page](https://github.com/Christian-Andersen/media-purger/releases):
+
+```bash
+curl -L -o media-purger-linux-x86_64 https://github.com/Christian-Andersen/media-purger/releases/latest/download/media-purger-linux-x86_64
+chmod +x media-purger-linux-x86_64
+./media-purger-linux-x86_64 --help
+```
+
+Built for x86_64 Linux. Statically linked — no dependencies needed.
+
 ## Build
 
 ```
