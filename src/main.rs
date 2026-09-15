@@ -160,7 +160,9 @@ fn resolve_config() -> Config {
     };
 
     if args.delete_watched_but_not_favourited_yes_i_am_really_sure && args.interactive {
-        eprintln!("Error: --delete-watched-but-not-favourited-yes-i-am-really-sure cannot be used with --interactive");
+        eprintln!(
+            "Error: --delete-watched-but-not-favourited-yes-i-am-really-sure cannot be used with --interactive"
+        );
         std::process::exit(1);
     }
 
@@ -181,9 +183,8 @@ fn resolve_config() -> Config {
     }
 }
 
-#[must_use]
 fn create_client(api_key: &str) -> Result<Client, Box<dyn std::error::Error>> {
-    let auth_header_value = format!("MediaBrowser Token=\"{}\"", api_key);
+    let auth_header_value = format!("MediaBrowser Token=\"{api_key}\"");
     let mut headers = HeaderMap::new();
     headers.insert(
         "X-Emby-Authorization",
@@ -196,67 +197,55 @@ fn create_client(api_key: &str) -> Result<Client, Box<dyn std::error::Error>> {
 }
 
 fn handle_api_error(
-    response: reqwest::blocking::Response,
+    response: &reqwest::blocking::Response,
     context: &str,
 ) -> Box<dyn std::error::Error> {
     let status = response.status();
     if status.as_u16() == 401 {
-        format!(
-            "{}: Authentication failed (401). Check your API key.",
-            context
-        )
-        .into()
+        format!("{context}: Authentication failed (401). Check your API key.").into()
     } else if status.as_u16() == 403 {
-        format!(
-            "{}: Permission denied (403). User may not have delete permission.",
-            context
-        )
-        .into()
+        format!("{context}: Permission denied (403). User may not have delete permission.").into()
     } else if status.as_u16() == 404 {
-        format!("{}: Item not found (404).", context).into()
+        format!("{context}: Item not found (404).").into()
     } else if status.is_server_error() {
-        format!("{}: Server error ({})", context, status).into()
+        format!("{context}: Server error ({status})").into()
     } else if status.is_client_error() {
-        format!("{}: Client error ({})", context, status).into()
+        format!("{context}: Client error ({status})").into()
     } else {
-        format!("{}: Unknown error ({})", context, status).into()
+        format!("{context}: Unknown error ({status})").into()
     }
 }
 
-#[must_use]
 fn fetch_users(
     client: &Client,
     base_url: &str,
 ) -> Result<Vec<JellyfinUser>, Box<dyn std::error::Error>> {
-    let url = format!("{}/Users", base_url);
+    let url = format!("{base_url}/Users");
     let response = client.get(url).send()?;
     if response.status().is_success() {
         let users: Vec<JellyfinUser> = response.json()?;
         Ok(users)
     } else {
-        Err(handle_api_error(response, "Failed to fetch users"))
+        Err(handle_api_error(&response, "Failed to fetch users"))
     }
 }
 
-#[must_use]
 fn fetch_all_items(
     client: &Client,
     base_url: &str,
 ) -> Result<Vec<MediaItem>, Box<dyn std::error::Error>> {
     let url = format!(
-        "{}/Items?Recursive=true&Fields=Path,UserData,MediaSources,Size,ParentId,SeasonName,IndexNumber,ParentIndexNumber",
-        base_url
+        "{base_url}/Items?Recursive=true&Fields=Path,UserData,MediaSources,Size,ParentId,SeasonName,IndexNumber,ParentIndexNumber"
     );
     let response = client.get(url).send()?;
     if response.status().is_success() {
         let items_response: ItemsResponse = response.json()?;
         Ok(items_response.items)
     } else {
-        Err(handle_api_error(response, "Failed to fetch items"))
+        Err(handle_api_error(&response, "Failed to fetch items"))
     }
 }
 
-#[must_use]
 fn fetch_played_items(
     client: &Client,
     base_url: &str,
@@ -268,13 +257,12 @@ fn fetch_played_items(
 
     loop {
         let url = format!(
-            "{}/Items?userId={}&IsPlayed=true&Recursive=true&Fields=Path,MediaSources,UserData,Size&startIndex={}&limit={}",
-            base_url, user_id, start_index, limit
+            "{base_url}/Items?userId={user_id}&IsPlayed=true&Recursive=true&Fields=Path,MediaSources,UserData,Size&startIndex={start_index}&limit={limit}"
         );
 
         let response = client.get(url).send()?;
         if !response.status().is_success() {
-            return Err(handle_api_error(response, "Failed to fetch played items"));
+            return Err(handle_api_error(&response, "Failed to fetch played items"));
         }
         let items_response: ItemsResponse = response.json()?;
         let count = items_response.items.len();
@@ -321,7 +309,6 @@ fn build_ancestor_map(items: &[MediaItem]) -> HashMap<String, HashSet<String>> {
     ancestor_map
 }
 
-#[must_use]
 fn fetch_favorite_items(
     client: &Client,
     base_url: &str,
@@ -333,13 +320,15 @@ fn fetch_favorite_items(
 
     loop {
         let url = format!(
-            "{}/Items?userId={}&IsFavorite=true&Recursive=true&startIndex={}&limit={}",
-            base_url, user_id, start_index, limit
+            "{base_url}/Items?userId={user_id}&IsFavorite=true&Recursive=true&startIndex={start_index}&limit={limit}"
         );
 
         let response = client.get(url).send()?;
         if !response.status().is_success() {
-            return Err(handle_api_error(response, "Failed to fetch favorite items"));
+            return Err(handle_api_error(
+                &response,
+                "Failed to fetch favorite items",
+            ));
         }
         let items_response: ItemsResponse = response.json()?;
         let count = items_response.items.len();
@@ -354,20 +343,19 @@ fn fetch_favorite_items(
     Ok(favorites)
 }
 
-#[must_use]
 fn delete_item(
     client: &Client,
     base_url: &str,
     item_id: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let url = format!("{}/Items/{}", base_url, item_id);
+    let url = format!("{base_url}/Items/{item_id}");
     let response = client.delete(url).send()?;
     if response.status().is_success() {
         Ok(())
     } else {
         Err(handle_api_error(
-            response,
-            &format!("Failed to delete item {}", item_id),
+            &response,
+            &format!("Failed to delete item {item_id}"),
         ))
     }
 }
@@ -410,8 +398,9 @@ impl GroupedItem {
     fn items(&self) -> Vec<&MatchedItem> {
         match self {
             GroupedItem::Individual(item) => vec![item],
-            GroupedItem::Season { items, .. } => items.iter().collect(),
-            GroupedItem::Series { items, .. } => items.iter().collect(),
+            GroupedItem::Season { items, .. } | GroupedItem::Series { items, .. } => {
+                items.iter().collect()
+            }
         }
     }
 
@@ -451,7 +440,6 @@ impl GroupedItem {
     }
 }
 
-#[must_use]
 fn find_deletable_items(
     api_key: &str,
     _client: &Client,
@@ -502,20 +490,28 @@ fn find_deletable_items(
     if !watched_ids.is_empty() {
         let api_key = api_key.to_string();
         let base_url = base_url.to_string();
-        let thread_watched_ids: Vec<String> = watched_ids.iter().map(|s| s.to_string()).collect();
-        let handles: Vec<_> = thread_watched_ids.iter().map(|user_id| {
-            let user_id = user_id.clone();
-            let api_key = api_key.clone();
-            let base_url = base_url.clone();
-            thread::spawn(move || {
-                let client = create_client(&api_key).map_err(|e| e.to_string())?;
-                fetch_played_items(&client, &base_url, &user_id)
-                    .map(|played| (user_id, played))
-                    .map_err(|e| e.to_string())
+        let thread_watched_ids: Vec<String> = watched_ids
+            .iter()
+            .map(std::string::ToString::to_string)
+            .collect();
+        let handles: Vec<_> = thread_watched_ids
+            .iter()
+            .map(|user_id| {
+                let user_id = user_id.clone();
+                let api_key = api_key.clone();
+                let base_url = base_url.clone();
+                thread::spawn(move || {
+                    let client = create_client(&api_key).map_err(|e| e.to_string())?;
+                    fetch_played_items(&client, &base_url, &user_id)
+                        .map(|played| (user_id, played))
+                        .map_err(|e| e.to_string())
+                })
             })
-        }).collect();
+            .collect();
         for handle in handles {
-            let (user_id, played) = handle.join().map_err(|e| format!("thread panicked: {:?}", e))??;
+            let (user_id, played) = handle
+                .join()
+                .map_err(|e| format!("thread panicked: {e:?}"))??;
             println!("  User {} has {} played items", user_id, played.len());
             user_played.insert(user_id, played);
         }
@@ -529,20 +525,28 @@ fn find_deletable_items(
         );
         let api_key = api_key.to_string();
         let base_url = base_url.to_string();
-        let thread_protected_ids: Vec<String> = protected_ids.iter().map(|s| s.to_string()).collect();
-        let handles: Vec<_> = thread_protected_ids.iter().map(|user_id| {
-            let user_id = user_id.clone();
-            let api_key = api_key.clone();
-            let base_url = base_url.clone();
-            thread::spawn(move || {
-                let client = create_client(&api_key).map_err(|e| e.to_string())?;
-                fetch_favorite_items(&client, &base_url, &user_id)
-                    .map(|favorites| (user_id, favorites))
-                    .map_err(|e| e.to_string())
+        let thread_protected_ids: Vec<String> = protected_ids
+            .iter()
+            .map(std::string::ToString::to_string)
+            .collect();
+        let handles: Vec<_> = thread_protected_ids
+            .iter()
+            .map(|user_id| {
+                let user_id = user_id.clone();
+                let api_key = api_key.clone();
+                let base_url = base_url.clone();
+                thread::spawn(move || {
+                    let client = create_client(&api_key).map_err(|e| e.to_string())?;
+                    fetch_favorite_items(&client, &base_url, &user_id)
+                        .map(|favorites| (user_id, favorites))
+                        .map_err(|e| e.to_string())
+                })
             })
-        }).collect();
+            .collect();
         for handle in handles {
-            let (user_id, favorites) = handle.join().map_err(|e| format!("thread panicked: {:?}", e))??;
+            let (user_id, favorites) = handle
+                .join()
+                .map_err(|e| format!("thread panicked: {e:?}"))??;
             user_favorites.insert(user_id, favorites);
         }
     }
@@ -566,10 +570,10 @@ fn find_deletable_items(
                         if let Some(user) = users.iter().find(|u| u.id == *user_id) {
                             played_by.push(user.name.clone());
                         }
-                        if let Some(d) = date {
-                            if latest_date.is_none() || d > latest_date.as_ref().unwrap() {
-                                latest_date = Some(d.clone());
-                            }
+                        if let Some(d) = date
+                            && (latest_date.is_none() || d > latest_date.as_ref().unwrap())
+                        {
+                            latest_date = Some(d.clone());
                         }
                     } else {
                         all_watched = false;
@@ -587,16 +591,13 @@ fn find_deletable_items(
         }
 
         if let Some(min_days) = min_days_watched_ago {
-            let date_str = match &latest_date {
-                Some(d) => d,
-                None => {
-                    continue;
-                }
+            let Some(date_str) = &latest_date else {
+                continue;
             };
             if let Ok(date) = DateTime::parse_from_rfc3339(date_str) {
                 let now = Utc::now();
                 let days_ago = (now - date.with_timezone(&Utc)).num_days();
-                if days_ago < min_days as i64 {
+                if days_ago < i64::from(min_days) {
                     continue;
                 }
             } else {
@@ -613,12 +614,12 @@ fn find_deletable_items(
         let ancestors = ancestor_map.get(&item.id).cloned().unwrap_or_default();
 
         for user_id in &protected_ids {
-            if let Some(fav_set) = user_favorites.get(*user_id) {
-                if fav_set.contains(&item.id) || ancestors.iter().any(|a| fav_set.contains(a)) {
-                    protected = true;
-                    if let Some(user) = users.iter().find(|u| u.id == *user_id) {
-                        protected_by_users.push(user.name.clone());
-                    }
+            if let Some(fav_set) = user_favorites.get(*user_id)
+                && (fav_set.contains(&item.id) || ancestors.iter().any(|a| fav_set.contains(a)))
+            {
+                protected = true;
+                if let Some(user) = users.iter().find(|u| u.id == *user_id) {
+                    protected_by_users.push(user.name.clone());
                 }
             }
         }
@@ -634,20 +635,20 @@ fn find_deletable_items(
             .unwrap_or(0);
 
         let series_name = if item.item_type == "Episode" {
-            let mut current_id = item.parent_id.clone();
+            let mut current_id = item.parent_id.as_deref();
             let mut series: Option<&MediaItem> = None;
             let mut visited = HashSet::new();
             while let Some(pid) = current_id {
-                if visited.contains(&pid) {
+                if visited.contains(pid) {
                     break;
                 }
-                visited.insert(pid.clone());
-                if let Some(parent) = item_by_id.get(&pid) {
+                visited.insert(pid);
+                if let Some(parent) = item_by_id.get(pid) {
                     if parent.item_type == "Series" {
                         series = Some(parent);
                         break;
                     }
-                    current_id = parent.parent_id.clone();
+                    current_id = parent.parent_id.as_deref();
                 } else {
                     break;
                 }
@@ -661,19 +662,19 @@ fn find_deletable_items(
         let mut season_id: Option<String> = None;
 
         if item.item_type == "Episode" {
-            let mut current_id = item.parent_id.clone();
+            let mut current_id = item.parent_id.as_deref();
             let mut visited = HashSet::new();
             while let Some(pid) = current_id {
-                if visited.contains(&pid) {
+                if visited.contains(pid) {
                     break;
                 }
-                visited.insert(pid.clone());
-                if let Some(parent) = item_by_id.get(&pid) {
+                visited.insert(pid);
+                if let Some(parent) = item_by_id.get(pid) {
                     if parent.item_type == "Season" {
-                        season_id = Some(pid.clone());
-                        current_id = parent.parent_id.clone();
+                        season_id = Some(pid.to_string());
+                        current_id = parent.parent_id.as_deref();
                     } else if parent.item_type == "Series" {
-                        series_id = Some(pid.clone());
+                        series_id = Some(pid.to_string());
                         break;
                     } else {
                         break;
@@ -701,7 +702,7 @@ fn find_deletable_items(
         });
     }
 
-    matched_items.sort_by(|a, b| b.size.cmp(&a.size));
+    matched_items.sort_by_key(|b| std::cmp::Reverse(b.size));
 
     Ok(matched_items)
 }
@@ -712,13 +713,13 @@ fn group_items(all_items: &[MediaItem], deletable_items: Vec<MatchedItem>) -> Ve
     // Build a map of all episode IDs per season
     let mut all_episodes_by_season: HashMap<String, Vec<String>> = HashMap::new();
     for item in all_items {
-        if item.item_type == "Episode" {
-            if let Some(season_id) = &item.parent_id {
-                all_episodes_by_season
-                    .entry(season_id.clone())
-                    .or_default()
-                    .push(item.id.clone());
-            }
+        if item.item_type == "Episode"
+            && let Some(season_id) = &item.parent_id
+        {
+            all_episodes_by_season
+                .entry(season_id.clone())
+                .or_default()
+                .push(item.id.clone());
         }
     }
 
@@ -730,21 +731,21 @@ fn group_items(all_items: &[MediaItem], deletable_items: Vec<MatchedItem>) -> Ve
     let mut series_info: HashMap<String, String> = HashMap::new();
 
     for item in &deletable_items {
-        if item.item_type == "Episode" {
-            if let (Some(series_id), Some(season_id)) = (&item.series_id, &item.season_id) {
-                episodes_by_season
-                    .entry(season_id.clone())
-                    .or_default()
-                    .push(item.clone());
-                series_seasons
+        if item.item_type == "Episode"
+            && let (Some(series_id), Some(season_id)) = (&item.series_id, &item.season_id)
+        {
+            episodes_by_season
+                .entry(season_id.clone())
+                .or_default()
+                .push(item.clone());
+            series_seasons
+                .entry(series_id.clone())
+                .or_default()
+                .insert(season_id.clone());
+            if let Some(name) = &item.series_name {
+                series_info
                     .entry(series_id.clone())
-                    .or_default()
-                    .insert(season_id.clone());
-                if let Some(name) = &item.series_name {
-                    series_info
-                        .entry(series_id.clone())
-                        .or_insert_with(|| name.clone());
-                }
+                    .or_insert_with(|| name.clone());
             }
         }
     }
@@ -756,8 +757,7 @@ fn group_items(all_items: &[MediaItem], deletable_items: Vec<MatchedItem>) -> Ve
             // Check if ALL episodes in this season are in the deletable set
             let all_season_episode_ids = all_episodes_by_season.get(season_id);
             let all_deletable = all_season_episode_ids
-                .map(|all_ids| all_ids.iter().all(|id| deletable_ids.contains(id)))
-                .unwrap_or(true); // If we can't find all episodes, assume all are deletable
+                .is_none_or(|all_ids| all_ids.iter().all(|id| deletable_ids.contains(id))); // If we can't find all episodes, assume all are deletable
 
             if all_deletable {
                 let season_number = episodes[0].season_number.unwrap_or(0);
@@ -783,11 +783,11 @@ fn group_items(all_items: &[MediaItem], deletable_items: Vec<MatchedItem>) -> Ve
             // Verify all episodes in all seasons are in deletable set
             let mut all_episodes_deletable = true;
             for season_id in season_ids {
-                if let Some(all_ep_ids) = all_episodes_by_season.get(season_id) {
-                    if !all_ep_ids.iter().all(|id| deletable_ids.contains(id)) {
-                        all_episodes_deletable = false;
-                        break;
-                    }
+                if let Some(all_ep_ids) = all_episodes_by_season.get(season_id)
+                    && !all_ep_ids.iter().all(|id| deletable_ids.contains(id))
+                {
+                    all_episodes_deletable = false;
+                    break;
                 }
             }
 
@@ -799,7 +799,7 @@ fn group_items(all_items: &[MediaItem], deletable_items: Vec<MatchedItem>) -> Ve
                     .flatten()
                     .cloned()
                     .collect();
-                let total_episodes = all_episodes.len() as u32;
+                let total_episodes = u32::try_from(all_episodes.len()).unwrap_or(0);
                 let seasons: Vec<u32> = all_episodes
                     .iter()
                     .filter_map(|e| e.season_number)
@@ -855,7 +855,7 @@ fn format_size(size: u64) -> String {
     } else if size >= KB {
         format!("{:.2} KB", size as f64 / KB as f64)
     } else {
-        format!("{} B", size)
+        format!("{size} B")
     }
 }
 
@@ -868,7 +868,7 @@ fn format_days_ago(date_str: &str) -> String {
         } else if days == 1 {
             "Yesterday".to_string()
         } else {
-            format!("{} days ago", days)
+            format!("{days} days ago")
         }
     } else {
         date_str.to_string()
@@ -910,14 +910,10 @@ fn run_dry_run(items: &[GroupedItem]) {
         println!();
     }
     let total: usize = items.iter().map(|g| g.items().len()).sum();
-    println!("Total: {} items", total);
+    println!("Total: {total} items");
 }
 
-fn run_delete(
-    client: &Client,
-    base_url: &str,
-    items: &[GroupedItem],
-) -> Result<usize, Box<dyn std::error::Error>> {
+fn run_delete(client: &Client, base_url: &str, items: &[GroupedItem]) -> usize {
     let mut deleted = 0;
     let total_items: usize = items.iter().map(|g| g.items().len()).sum();
     let mut current = 0;
@@ -934,12 +930,12 @@ fn run_delete(
                     format_display_name(item)
                 );
                 match delete_item(client, base_url, &item.id) {
-                    Ok(_) => {
+                    Ok(()) => {
                         println!("\x1b[32m done\x1b[0m");
                         deleted += 1;
                     }
                     Err(e) => {
-                        println!("\x1b[31m failed: {}\x1b[0m", e);
+                        println!("\x1b[31m failed: {e}\x1b[0m");
                     }
                 }
             }
@@ -963,12 +959,12 @@ fn run_delete(
                         format_display_name(ep)
                     );
                     match delete_item(client, base_url, &ep.id) {
-                        Ok(_) => {
+                        Ok(()) => {
                             println!("\x1b[32m done\x1b[0m");
                             deleted += 1;
                         }
                         Err(e) => {
-                            println!("\x1b[31m failed: {}\x1b[0m", e);
+                            println!("\x1b[31m failed: {e}\x1b[0m");
                         }
                     }
                 }
@@ -986,7 +982,7 @@ fn run_delete(
                     total_episodes
                 );
                 for season_num in seasons {
-                    println!("    Season {}", season_num);
+                    println!("    Season {season_num}");
                 }
                 for ep in items {
                     current += 1;
@@ -997,23 +993,23 @@ fn run_delete(
                         format_display_name(ep)
                     );
                     match delete_item(client, base_url, &ep.id) {
-                        Ok(_) => {
+                        Ok(()) => {
                             println!("\x1b[32m done\x1b[0m");
                             deleted += 1;
                         }
                         Err(e) => {
-                            println!("\x1b[31m failed: {}\x1b[0m", e);
+                            println!("\x1b[31m failed: {e}\x1b[0m");
                         }
                     }
                 }
             }
         }
     }
-    println!("\nDeleted {} items", deleted);
-    Ok(deleted)
+    println!("\nDeleted {deleted} items");
+    deleted
 }
 
-fn run_tui(items: Vec<GroupedItem>) -> Result<Vec<GroupedItem>, Box<dyn std::error::Error>> {
+fn run_tui(items: &[GroupedItem]) -> Result<Vec<GroupedItem>, Box<dyn std::error::Error>> {
     enable_raw_mode()?;
     let mut stdout = std::io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
@@ -1059,8 +1055,7 @@ f.render_widget(
                 };
                 let date = item.items().first()
                     .and_then(|i| i.last_played_date.as_deref())
-                    .map(format_days_ago)
-                    .unwrap_or("Never".to_string());
+                    .map_or("Never".to_string(), format_days_ago);
                 let row = Row::new(vec![
                     Cell::from(checkbox),
                     Cell::from(display_name),
@@ -1123,59 +1118,57 @@ f.render_widget(
             );
         })?;
 
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press {
-                if show_help {
-                    show_help = false;
-                } else {
-                    match key.code {
-                        KeyCode::Char(' ') => {
-                            selected[cursor] = !selected[cursor];
-                        }
-                        KeyCode::Char('j') | KeyCode::Down => {
-                            if cursor < items.len() - 1 {
-                                cursor += 1;
-                            }
-                        }
-                        KeyCode::Char('k') | KeyCode::Up => {
-                            if cursor > 0 {
-                                cursor -= 1;
-                            }
-                        }
-                        KeyCode::PageDown | KeyCode::Char('f') => {
-                            cursor = (cursor + page_size).min(items.len() - 1);
-                        }
-                        KeyCode::PageUp | KeyCode::Char('b') => {
-                            cursor = cursor.saturating_sub(page_size);
-                        }
-                        KeyCode::Home | KeyCode::Char('g') => {
-                            cursor = 0;
-                        }
-                        KeyCode::End | KeyCode::Char('G') => {
-                            cursor = items.len().saturating_sub(1);
-                        }
-                        KeyCode::Char('?') => {
-                            show_help = !show_help;
-                        }
-                        KeyCode::Char('q') | KeyCode::Esc => {
-                            execute!(std::io::stdout(), LeaveAlternateScreen)?;
-                            disable_raw_mode()?;
-                            return Ok(vec![]);
-                        }
-                        KeyCode::Enter => {
-                            let final_items: Vec<GroupedItem> = items
-                                .iter()
-                                .enumerate()
-                                .filter(|(i, _)| selected[*i])
-                                .map(|(_, item)| item.clone())
-                                .collect();
-
-                            execute!(std::io::stdout(), LeaveAlternateScreen)?;
-                            disable_raw_mode()?;
-                            return Ok(final_items);
-                        }
-                        _ => {}
+        if let Event::Key(key) = event::read()?
+            && key.kind == KeyEventKind::Press
+        {
+            if show_help {
+                show_help = false;
+            } else {
+                match key.code {
+                    KeyCode::Char(' ') => {
+                        selected[cursor] = !selected[cursor];
                     }
+                    KeyCode::Char('j') | KeyCode::Down => {
+                        if cursor < items.len() - 1 {
+                            cursor += 1;
+                        }
+                    }
+                    KeyCode::Char('k') | KeyCode::Up => {
+                        cursor = cursor.saturating_sub(1);
+                    }
+                    KeyCode::PageDown | KeyCode::Char('f') => {
+                        cursor = (cursor + page_size).min(items.len() - 1);
+                    }
+                    KeyCode::PageUp | KeyCode::Char('b') => {
+                        cursor = cursor.saturating_sub(page_size);
+                    }
+                    KeyCode::Home | KeyCode::Char('g') => {
+                        cursor = 0;
+                    }
+                    KeyCode::End | KeyCode::Char('G') => {
+                        cursor = items.len().saturating_sub(1);
+                    }
+                    KeyCode::Char('?') => {
+                        show_help = !show_help;
+                    }
+                    KeyCode::Char('q') | KeyCode::Esc => {
+                        execute!(std::io::stdout(), LeaveAlternateScreen)?;
+                        disable_raw_mode()?;
+                        return Ok(vec![]);
+                    }
+                    KeyCode::Enter => {
+                        let final_items: Vec<GroupedItem> = items
+                            .iter()
+                            .enumerate()
+                            .filter(|(i, _)| selected[*i])
+                            .map(|(_, item)| item.clone())
+                            .collect();
+
+                        execute!(std::io::stdout(), LeaveAlternateScreen)?;
+                        disable_raw_mode()?;
+                        return Ok(final_items);
+                    }
+                    _ => {}
                 }
             }
         }
@@ -1196,13 +1189,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let user_names: HashSet<&str> = users.iter().map(|u| u.name.as_str()).collect();
     for name in &config.watched_by {
         if !user_names.contains(name.as_str()) {
-            eprintln!("Error: watched-by user '{}' not found", name);
+            eprintln!("Error: watched-by user '{name}' not found");
             std::process::exit(1);
         }
     }
     for name in &config.protected_by {
         if !user_names.contains(name.as_str()) {
-            eprintln!("Error: protected-by user '{}' not found", name);
+            eprintln!("Error: protected-by user '{name}' not found");
             std::process::exit(1);
         }
     }
@@ -1225,8 +1218,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     println!("\n--- Finding deletable items ---");
-    println!("  Must be watched by: {}", watched_spec);
-    println!("  Protected by: {}", protected_spec);
+    println!("  Must be watched by: {watched_spec}");
+    println!("  Protected by: {protected_spec}");
 
     let matched_items = find_deletable_items(
         &config.api_key,
@@ -1250,10 +1243,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     if config.delete {
-        let deleted = run_delete(&client, &config.base_url, &grouped_items)?;
-        println!("\n=== Done: {} items deleted ===", deleted);
+        let deleted = run_delete(&client, &config.base_url, &grouped_items);
+        println!("\n=== Done: {deleted} items deleted ===");
     } else if config.interactive {
-        let selected = run_tui(grouped_items)?;
+        let selected = run_tui(&grouped_items)?;
         if selected.is_empty() {
             println!("No items selected, nothing deleted.");
         } else {
@@ -1261,29 +1254,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             for item in &selected {
                 match item {
                     GroupedItem::Individual(i) => {
-                        all_items.push(format!(
-                            "[{}] {}",
-                            i.item_type,
-                            format_display_name(i)
-                        ));
+                        all_items.push(format!("[{}] {}", i.item_type, format_display_name(i)));
                     }
                     GroupedItem::Season { items, .. } => {
                         for ep in items {
-                            all_items
-                                .push(format!("[Episode] {}", format_display_name(ep)));
+                            all_items.push(format!("[Episode] {}", format_display_name(ep)));
                         }
                     }
                     GroupedItem::Series { seasons, items, .. } => {
                         let mut sorted_seasons = seasons.clone();
-                        sorted_seasons.sort();
+                        sorted_seasons.sort_unstable();
                         for season_num in sorted_seasons {
                             let season_eps: Vec<&MatchedItem> = items
                                 .iter()
                                 .filter(|e| e.season_number == Some(season_num))
                                 .collect();
                             for ep in season_eps {
-                                all_items
-                                    .push(format!("[Episode] {}", format_display_name(ep)));
+                                all_items.push(format!("[Episode] {}", format_display_name(ep)));
                             }
                         }
                     }
@@ -1292,7 +1279,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             all_items.sort();
             println!("\nItems to be deleted:");
             for name in &all_items {
-                println!("  - {}", name);
+                println!("  - {name}");
             }
             let total = all_items.len();
             eprint!(
@@ -1304,8 +1291,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             std::io::stdin().read_line(&mut input).ok();
             if input.trim().eq_ignore_ascii_case("y") {
                 println!("\n--- Deleting {} selected items ---", selected.len());
-                let deleted = run_delete(&client, &config.base_url, &selected)?;
-                println!("\n=== Done: {} items deleted ===", deleted);
+                let deleted = run_delete(&client, &config.base_url, &selected);
+                println!("\n=== Done: {deleted} items deleted ===");
             } else {
                 println!("Deletion cancelled.");
             }
