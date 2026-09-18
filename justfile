@@ -10,6 +10,9 @@ alias t := test
 default:
     @just --list
 
+setup:
+    rustup default stable
+
 check:
     prek run --all-files
 
@@ -28,4 +31,4 @@ run *args:
 test *args:
     cargo test {{ args }}
 
-ci: audit check build doc test
+ci: setup audit check build doc test
