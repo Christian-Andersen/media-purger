@@ -5,7 +5,6 @@ alias c := check
 alias d := doc
 alias r := run
 alias t := test
-alias ci := continuous_integration
 
 [private]
 default:
@@ -29,4 +28,4 @@ run *args:
 test *args:
     cargo test {{ args }}
 
-continuous_integration: audit check build doc test
+ci: audit check build doc test
