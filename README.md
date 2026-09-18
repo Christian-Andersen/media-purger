@@ -6,10 +6,10 @@ The tool finds media that every specified user has watched but no specified user
 
 ## Install
 
-Download the pre-built binary from the [releases page](https://github.com/Christian-Andersen/media-purger/releases):
+Download the pre-built binary from the [releases page](https://server/Christian-Andersen/media-purger/releases):
 
 ```bash
-curl -L -o media-purger-linux-x86_64 https://github.com/Christian-Andersen/media-purger/releases/latest/download/media-purger-linux-x86_64
+curl -L -o media-purger-linux-x86_64 https://server/Christian-Andersen/media-purger/releases/latest/download/media-purger-linux-x86_64
 chmod +x media-purger-linux-x86_64
 ./media-purger-linux-x86_64 --help
 ```
@@ -68,6 +68,7 @@ Use space to toggle selection, enter to confirm, q to quit.
 The long flag name is intentional. You have to type it out.
 
 ## Options
+
 `--jellyfin-url` / `JELLYFIN_URL` - Jellyfin server URL.
 `--jellyfin-api-key` / `JELLYFIN_API_KEY` - Jellyfin API key.
 `--watched-by`, `-w` - Users who must all have watched an item for it to be considered. Default is all users.
