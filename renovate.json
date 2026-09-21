@@ -3,6 +3,7 @@
   "nix": {
     "enabled": true
   },
+  "ignorePaths": ["**/target/**"],
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["before 5am on monday"]
