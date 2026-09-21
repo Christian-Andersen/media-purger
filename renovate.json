@@ -15,5 +15,31 @@
       "groupSlug": "nix-flake-inputs",
       "schedule": ["before 5am on monday"]
     }
+  ],
+  "customManagers": [
+    {
+      "description": "Forgejo/Gitea Actions: shorthand GitHub action refs (owner/repo@v1) used by .forgejo/.gitea workflows",
+      "customType": "regex",
+      "fileMatch": ["(^|/)(\\.forgejo|\\.gitea)/workflows/[^/]+\\.ya?ml$"],
+      "matchStrings": [
+        "^\\s*(?:-\\s*)?uses\\s*:\\s*(?<depName>[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+)@(?<currentValue>v?\\d+(?:\\.\\d+){0,2}(?:-[\\w.]+)?)\\s*(?:#.*)?$"
+      ],
+      "datasourceTemplate": "github-tags",
+      "depNameTemplate": "{{{depName}}}",
+      "packageNameTemplate": "{{{depName}}}",
+      "versioningTemplate": "github-actions"
+    },
+    {
+      "description": "Forgejo/Gitea Actions: full-qualified GitHub action URLs (https://github.com/owner/repo@v1) used by .forgejo/.gitea workflows",
+      "customType": "regex",
+      "fileMatch": ["(^|/)(\\.forgejo|\\.gitea)/workflows/[^/]+\\.ya?ml$"],
+      "matchStrings": [
+        "^\\s*(?:-\\s*)?uses\\s*:\\s*https:\\/\\/github\\.com\\/(?<depName>[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+)@(?<currentValue>v?\\d+(?:\\.\\d+){0,2}(?:-[\\w.]+)?)\\s*(?:#.*)?$"
+      ],
+      "datasourceTemplate": "github-tags",
+      "depNameTemplate": "https://github.com/{{{depName}}}",
+      "packageNameTemplate": "{{{depName}}}",
+      "versioningTemplate": "github-actions"
+    }
   ]
 }
