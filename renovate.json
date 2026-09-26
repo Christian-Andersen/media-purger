@@ -1,46 +1,28 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "The CI actions pinned in .forgejo/workflows are tracked by the built-in github-actions manager, which already matches .forgejo and .gitea workflows and understands both 'owner/repo@v1' and full-URL 'https://github.com/owner/repo@v1' refs. No customManagers are needed.",
+  "extends": ["config:recommended"],
   "nix": {
     "enabled": true
   },
   "ignorePaths": ["**/target/**"],
   "lockFileMaintenance": {
-    "enabled": true,
-    "schedule": ["before 5am on monday"]
+    "enabled": true
   },
   "packageRules": [
     {
-      "description": "Group updates to Nix flake inputs (flake.lock revisions) into a single weekly pull request",
+      "description": "Group Nix flake input updates into a single PR",
       "matchManagers": ["nix"],
+      "matchUpdateTypes": ["digest"],
       "groupName": "Nix flake inputs",
-      "groupSlug": "nix-flake-inputs",
-      "schedule": ["before 5am on monday"]
-    }
-  ],
-  "customManagers": [
-    {
-      "description": "Forgejo/Gitea Actions: shorthand GitHub action refs (owner/repo@v1) used by .forgejo/.gitea workflows",
-      "customType": "regex",
-      "fileMatch": ["(^|/)(\\.forgejo|\\.gitea)/workflows/[^/]+\\.ya?ml$"],
-      "matchStrings": [
-        "^\\s*(?:-\\s*)?uses\\s*:\\s*(?<depName>[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+)@(?<currentValue>v?\\d+(?:\\.\\d+){0,2}(?:-[\\w.]+)?)\\s*(?:#.*)?$"
-      ],
-      "datasourceTemplate": "github-tags",
-      "depNameTemplate": "{{{depName}}}",
-      "packageNameTemplate": "{{{depName}}}",
-      "versioningTemplate": "github-actions"
+      "groupSlug": "nix-flake-inputs"
     },
     {
-      "description": "Forgejo/Gitea Actions: full-qualified GitHub action URLs (https://github.com/owner/repo@v1) used by .forgejo/.gitea workflows",
-      "customType": "regex",
-      "fileMatch": ["(^|/)(\\.forgejo|\\.gitea)/workflows/[^/]+\\.ya?ml$"],
-      "matchStrings": [
-        "^\\s*(?:-\\s*)?uses\\s*:\\s*https:\\/\\/github\\.com\\/(?<depName>[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+)@(?<currentValue>v?\\d+(?:\\.\\d+){0,2}(?:-[\\w.]+)?)\\s*(?:#.*)?$"
-      ],
-      "datasourceTemplate": "github-tags",
-      "depNameTemplate": "https://github.com/{{{depName}}}",
-      "packageNameTemplate": "{{{depName}}}",
-      "versioningTemplate": "github-actions"
+      "description": "Group non-major CI action updates in .forgejo/workflows; major bumps get their own PR",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["digest", "patch", "minor"],
+      "groupName": "CI workflow actions",
+      "groupSlug": "ci-workflow-actions"
     }
   ]
 }
