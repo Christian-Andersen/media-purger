@@ -2,6 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "description": "The CI actions pinned in .forgejo/workflows are tracked by the built-in github-actions manager, which already matches .forgejo and .gitea workflows and understands both 'owner/repo@v1' and full-URL 'https://github.com/owner/repo@v1' refs. No customManagers are needed.",
   "extends": ["config:recommended", ":disableDependencyDashboard"],
+  "semanticCommits": "enabled",
   "nix": {
     "enabled": true
   },
