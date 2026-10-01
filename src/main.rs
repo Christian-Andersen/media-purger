@@ -443,7 +443,6 @@ impl GroupedItem {
 
 fn find_deletable_items(
     api_key: &str,
-    _client: &Client,
     base_url: &str,
     users: &[JellyfinUser],
     items: &[MediaItem],
@@ -1227,7 +1226,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let matched_items = find_deletable_items(
         &config.api_key,
-        &client,
         &config.base_url,
         &users,
         &items,
