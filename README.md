@@ -68,13 +68,13 @@ The long flag name is intentional. You have to type it out.
 
 ## Examples
 
-Delete items watched by alice and bob, regardless of favorite status:
+Delete items watched by alice and bob, regardless of favorite status (dry-run preview):
 
 ```
 ./media-purger --watched-by alice bob --ignore-favorites
 ```
 
-Delete items that alice has watched and bob has not favorited:
+List items that alice has watched and bob has not favorited (dry-run preview):
 
 ```
 ./media-purger --watched-by alice --protected-by bob
@@ -89,7 +89,7 @@ Delete items all users have watched and no user has favorited, if watched more t
 Delete everything regardless of favorite status:
 
 ```
-./media-purger --ignore-favorites --delete
+./media-purger --ignore-favorites --delete-watched-but-not-favourited-yes-i-am-really-sure
 ```
 
 ## How it works
