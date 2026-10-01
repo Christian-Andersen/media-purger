@@ -1039,7 +1039,7 @@ fn run_tui(items: &[GroupedItem]) -> Result<Vec<GroupedItem>, Box<dyn std::error
                 ])
                 .split(f.area());
 
-f.render_widget(
+            f.render_widget(
                 ratatui::text::Line::from(" Media Purger - Select items to delete (space to toggle, enter to confirm, esc to cancel) ")
                     .bold()
                     .white()
