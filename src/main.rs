@@ -149,6 +149,7 @@ fn resolve_config() -> Config {
         eprintln!("Error: No Jellyfin URL provided. Use --jellyfin-url or JELLYFIN_URL");
         std::process::exit(1);
     };
+    let base_url = base_url.trim_end_matches('/').to_string();
 
     let api_key = if !args.jellyfin_api_key.is_empty() {
         args.jellyfin_api_key
