@@ -1010,6 +1010,9 @@ fn run_delete(client: &Client, base_url: &str, items: &[GroupedItem]) -> usize {
 }
 
 fn run_tui(items: &[GroupedItem]) -> Result<Vec<GroupedItem>, Box<dyn std::error::Error>> {
+    if items.is_empty() {
+        return Ok(vec![]);
+    }
     enable_raw_mode()?;
     let mut stdout = std::io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
