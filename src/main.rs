@@ -149,6 +149,7 @@ fn resolve_config() -> Config {
         eprintln!("Error: No Jellyfin URL provided. Use --jellyfin-url or JELLYFIN_URL");
         std::process::exit(1);
     };
+    let base_url = base_url.trim_end_matches('/').to_string();
 
     let api_key = if !args.jellyfin_api_key.is_empty() {
         args.jellyfin_api_key
@@ -442,7 +443,6 @@ impl GroupedItem {
 
 fn find_deletable_items(
     api_key: &str,
-    _client: &Client,
     base_url: &str,
     users: &[JellyfinUser],
     items: &[MediaItem],
@@ -1010,6 +1010,9 @@ fn run_delete(client: &Client, base_url: &str, items: &[GroupedItem]) -> usize {
 }
 
 fn run_tui(items: &[GroupedItem]) -> Result<Vec<GroupedItem>, Box<dyn std::error::Error>> {
+    if items.is_empty() {
+        return Ok(vec![]);
+    }
     enable_raw_mode()?;
     let mut stdout = std::io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
@@ -1035,7 +1038,7 @@ fn run_tui(items: &[GroupedItem]) -> Result<Vec<GroupedItem>, Box<dyn std::error
                 ])
                 .split(f.area());
 
-f.render_widget(
+            f.render_widget(
                 ratatui::text::Line::from(" Media Purger - Select items to delete (space to toggle, enter to confirm, esc to cancel) ")
                     .bold()
                     .white()
@@ -1223,7 +1226,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let matched_items = find_deletable_items(
         &config.api_key,
-        &client,
         &config.base_url,
         &users,
         &items,
